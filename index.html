@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Car Instalment Calculator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
+  .container { max-width: 960px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  h1 { font-size: 1.8rem; margin-bottom: 6px; }
+  .subtitle { color: #777; margin-bottom: 30px; font-size: 0.95rem; }
+  .layout { display: flex; gap: 40px; flex-wrap: wrap; }
+  .inputs { flex: 1; min-width: 300px; }
+  .results { flex: 1; min-width: 300px; }
+  .field { margin-bottom: 20px; }
+  .field label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; }
+  .field-row { display: flex; align-items: center; gap: 8px; }
+  .field-row span.prefix { color: #888; font-weight: 600; }
+  .field input, .field select { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; outline: none; transition: border 0.2s; }
+  .field input:focus, .field select:focus { border-color: #c0392b; }
+  .rate-buttons { display: flex; gap: 8px; margin-top: 8px; }
+  .rate-btn { padding: 6px 16px; border: 1.5px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+  .rate-btn.active { border-color: #c0392b; color: #c0392b; font-weight: 600; }
+  .rate-btn:hover { border-color: #c0392b; }
+  .section-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #999; margin: 28px 0 12px; border-top: 1px solid #eee; padding-top: 16px; }
+  .results-card { background: #fafafa; border-radius: 12px; padding: 28px; border: 1px solid #eee; }
+  .results-card h2 { font-size: 1.1rem; text-align: center; margin-bottom: 20px; }
+  .highlight-row { display: flex; justify-content: space-around; background: #fff; border-radius: 10px; padding: 18px; margin-bottom: 20px; border: 1px solid #eee; }
+  .highlight-item { text-align: center; }
+  .highlight-item .label { font-size: 0.78rem; color: #888; margin-bottom: 4px; }
+  .highlight-item .value { font-size: 1.5rem; font-weight: 700; color: #c0392b; }
+  .highlight-item .value.dark { color: #333; }
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.95rem; }
+  .detail-row.total { border-top: 2px solid #eee; margin-top: 8px; padding-top: 14px; font-weight: 700; }
+  .detail-row .val { font-weight: 600; }
+  .detail-row.total .val { color: #c0392b; font-size: 1.1rem; }
+  .net-sale { background: #f0fdf4; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid #bbf7d0; }
+  .net-sale .detail-row .val { color: #16a34a; font-weight: 700; }
+  @media (max-width: 700px) { .layout { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>New Car Instalment Calculator</h1>
+  <p class="subtitle">Calculate your monthly instalment based on car price, loan interest rates, and proceeds from your existing car sale.</p>
+  <div class="layout">
+    <div class="inputs">
+      <div class="field"><label>Car Price</label><div class="field-row"><span class="prefix">$</span><input type="number" id="carPrice" value="203300"></div></div>
+      <div class="field"><label>Interest Rate (%)</label><input type="number" id="interestRate" value="2.48" step="0.01">
+        <div class="rate-buttons"><button class="rate-btn active" onclick="setRate(2.48)">2.48%</button><button class="rate-btn" onclick="setRate(2.78)">2.78%</button><button class="rate-btn" onclick="setRate(2.99)">2.99%</button></div>
+      </div>
+      <div class="field"><label>Loan Amount</label><div class="field-row"><span class="prefix">$</span><input type="number" id="loanAmt" value="119880"></div></div>
+      <div class="field"><label>Loan Term</label><select id="loanTerm"><option value="60">60 months (5 years)</option><option value="72">72 months (6 years)</option><option value="84" selected>84 months (7 years)</option></select></div>
+
+      <div class="section-label">Existing Car</div>
+      <div class="field"><label>Sale of Existing Car</label><div class="field-row"><span class="prefix">$</span><input type="number" id="salePrice" value="0"></div></div>
+      <div class="field"><label>Remaining Loan on Existing Car</label><div class="field-row"><span class="prefix">$</span><input type="number" id="remainingLoan" value="0"></div></div>
+    </div>
+    <div class="results">
+      <div class="results-card">
+        <h2>Car Loan Payment Breakdown</h2>
+        <div class="highlight-row">
+          <div class="highlight-item"><div class="label">Monthly Instalment</div><div class="value" id="rMonthly">$0</div></div>
+          <div class="highlight-item"><div class="label">Depreciation / year</div><div class="value dark" id="rDepreciation">$0</div></div>
+        </div>
+        <div class="net-sale" id="netSaleSection" style="display:none;">
+          <div class="detail-row"><span>Sale of Existing Car</span><span class="val" id="rSale">$0</span></div>
+          <div class="detail-row"><span>Less: Remaining Loan</span><span class="val" style="color:#dc2626" id="rRemLoan">-$0</span></div>
+          <div class="detail-row total"><span>Net Proceeds from Sale</span><span class="val" style="color:#16a34a" id="rNetSale">$0</span></div>
+        </div>
+        <div class="detail-row"><span>Down Payment (before sale)</span><span class="val" id="rDownRaw">$0</span></div>
+        <div class="detail-row"><span>Less: Net Sale Proceeds</span><span class="val" id="rSaleOffset">$0</span></div>
+        <div class="detail-row"><span><strong>Cash Down Payment Needed</strong></span><span class="val" id="rDownFinal">$0</span></div>
+        <div class="detail-row"><span>Loan Amount</span><span class="val" id="rLoan">$0</span></div>
+        <div class="detail-row"><span>Interest Paid</span><span class="val" id="rInterest">$0</span></div>
+        <div class="detail-row total"><span>Total Paid Amount</span><span class="val" id="rTotal">$0</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(n).toLocaleString();
+
+function setRate(r) {
+  $('interestRate').value = r;
+  document.querySelectorAll('.rate-btn').forEach(b => b.classList.toggle('active', parseFloat(b.textContent) === r));
+  calc();
+}
+
+function calc() {
+  const price = parseFloat($('carPrice').value) || 0;
+  const rate = (parseFloat($('interestRate').value) || 0) / 100;
+  const months = parseInt($('loanTerm').value) || 84;
+  const loanAmt = Math.min(parseFloat($('loanAmt').value) || 0, price);
+  const sale = parseFloat($('salePrice').value) || 0;
+  const remLoan = parseFloat($('remainingLoan').value) || 0;
+
+  const downRaw = price - loanAmt;
+  const netSale = Math.max(sale - remLoan, 0);
+  const cashDown = Math.max(downRaw - netSale, 0);
+
+  const years = months / 12;
+  const interest = loanAmt * rate * years;
+  const totalLoan = loanAmt + interest;
+  const monthly = months > 0 ? totalLoan / months : 0;
+  const depPerYear = price / 10;
+  const totalPaid = downRaw + totalLoan;
+
+  const showSale = sale > 0 || remLoan > 0;
+  $('netSaleSection').style.display = showSale ? 'block' : 'none';
+
+  $('rMonthly').textContent = fmt(monthly);
+  $('rDepreciation').textContent = fmt(depPerYear);
+  $('rSale').textContent = fmt(sale);
+  $('rRemLoan').textContent = '-' + fmt(remLoan);
+  $('rNetSale').textContent = fmt(netSale);
+  $('rDownRaw').textContent = fmt(downRaw);
+  $('rSaleOffset').textContent = '-' + fmt(Math.min(netSale, downRaw));
+  $('rDownFinal').textContent = fmt(cashDown);
+  $('rLoan').textContent = fmt(loanAmt);
+  $('rInterest').textContent = fmt(interest);
+  $('rTotal').textContent = fmt(totalPaid);
+}
+
+document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calc));
+calc();
+</script>
+</body>
+</html>
